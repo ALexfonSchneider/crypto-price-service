@@ -111,7 +111,7 @@ internal/
 ├── client/           # Внешние API (CoinGecko)
 ├── config/           # Конфигурация
 ├── db/               # SQLC-генерация, SQL-запросы
-├── delivery/         # HTTP-хэндлеры, middleware и тругой транспорт
+├── delivery/         # HTTP-хэндлеры, middleware и другой транспорт
 ├── dto/              # Data Transfer Objects
 ├── errors/           # Кастомные ошибки
 ├── models/           # Доменные модели
