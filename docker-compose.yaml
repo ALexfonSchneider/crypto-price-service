@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres_db
+    environment:
+      POSTGRES_DB: crypto
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "5432:5432"
+    networks:
+      net:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U user -d crypto_price_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+  service:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    environment:
+      APP_ENV: "docker"
+    ports:
+      - "8080:8080"
+    networks:
+      net:
+
+networks:
+  net:
+
+volumes:
+  postgres_data:

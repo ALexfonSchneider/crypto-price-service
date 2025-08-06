@@ -1,0 +1,221 @@
+basePath: /api/v1
+definitions:
+  crypto-price-service_internal_delivery_http_dto.ErrorBody:
+    properties:
+      cause:
+        type: string
+      code:
+        type: integer
+      detail:
+        type: string
+      message:
+        type: string
+    type: object
+  crypto-price-service_internal_delivery_http_dto.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorBody'
+    type: object
+  internal_delivery_http_handlers_coin_addCoin.Request:
+    properties:
+      name:
+        type: string
+      symbol:
+        type: string
+    required:
+    - name
+    - symbol
+    type: object
+  internal_delivery_http_handlers_coin_removeCoin.Request:
+    properties:
+      Symbol:
+        type: string
+    type: object
+  internal_delivery_http_handlers_coin_watchlist.Coin:
+    properties:
+      created_at:
+        type: string
+      is_active:
+        type: boolean
+      name:
+        type: string
+      symbol:
+        type: string
+    type: object
+  internal_delivery_http_handlers_coin_watchlist.SuccessResponse:
+    properties:
+      coins:
+        items:
+          $ref: '#/definitions/internal_delivery_http_handlers_coin_watchlist.Coin'
+        type: array
+    type: object
+  internal_delivery_http_handlers_prices_AllForCoin.CoinPrice:
+    properties:
+      created_at:
+        type: string
+      price:
+        type: number
+    type: object
+  internal_delivery_http_handlers_prices_AllForCoin.Request:
+    properties:
+      symbol:
+        type: string
+    type: object
+  internal_delivery_http_handlers_prices_AllForCoin.SuccessResponse:
+    properties:
+      prices:
+        items:
+          $ref: '#/definitions/internal_delivery_http_handlers_prices_AllForCoin.CoinPrice'
+        type: array
+    type: object
+  internal_delivery_http_handlers_prices_closestToTimestamp.Request:
+    properties:
+      symbol:
+        type: string
+      timestamp:
+        type: integer
+    type: object
+  internal_delivery_http_handlers_prices_closestToTimestamp.SuccessResponse:
+    properties:
+      created_at:
+        type: string
+      price:
+        type: number
+      symbol:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: API for watching crypto prices
+  title: Crypto Price API
+  version: "1.0"
+paths:
+  /currency/add:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Add coin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_handlers_coin_addCoin.Request'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: No content (only status)
+        "400":
+          description: Input error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+      summary: Add coin to watchlist
+      tags:
+      - Coins
+  /currency/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Watchable coins
+          schema:
+            $ref: '#/definitions/internal_delivery_http_handlers_coin_watchlist.SuccessResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+      summary: get coins watchlist
+      tags:
+      - Coins
+  /currency/price:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: get closest price for coin
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_handlers_prices_closestToTimestamp.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ближайшая цена монеты
+          schema:
+            $ref: '#/definitions/internal_delivery_http_handlers_prices_closestToTimestamp.SuccessResponse'
+        "400":
+          description: Input error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+        "404":
+          description: Price does not exists yet
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+      summary: get closest coin price
+      tags:
+      - Prices
+  /currency/prices:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: get all prices for coin
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_handlers_prices_AllForCoin.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_delivery_http_handlers_prices_AllForCoin.SuccessResponse'
+        "404":
+          description: Coin doew not exists
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+      summary: get all prices for coin
+      tags:
+      - Prices
+  /currency/remove:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: remove coin request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_delivery_http_handlers_coin_removeCoin.Request'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: No content (only status)
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse'
+      summary: remove coin from watchlist
+      tags:
+      - Coins
+swagger: "2.0"

@@ -1,0 +1,16 @@
+app:
+  coin_price_collector:
+    interval: "1m"
+  coin_price_fetcher:
+    timeout: "10s"
+    coingecko:
+      url: "https://api.coingecko.com/api/v3/simple/price"
+postgres:
+  host: localhost
+  port: 5432
+  database: crypto
+  password: admin
+  user: admin
+http:
+  host: localhost
+  port: 8080
