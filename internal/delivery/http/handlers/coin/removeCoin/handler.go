@@ -2,7 +2,6 @@ package removeCoin
 
 import (
 	_ "crypto-price-service/internal/delivery/http/dto"
-	apperrors "crypto-price-service/internal/errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -17,26 +16,22 @@ func New(coins Coins) *Handler {
 	}
 }
 
-// removeCoin godoc
-// @Summary remove coin from watchlist
-// @Tags Coins
-// @Param request body Request true "remove coin request"
-// @Accept json
-// @Produce json
-// @Success 200 "No content (only status)"
-// @Failure 500 {object} dto.ErrorResponse "Internal error"
-// @Router /currency/remove [delete]
+// RemoveCoin godoc
+// @Summary      Remove coin from watchlist
+// @Description  Removes a coin from the watchlist by its symbol
+// @Tags         Coins
+// @Param        symbol  path     string  true  "Coin symbol (e.g. BTC, ETH)"
+// @Produce      json
+// @Success      204 "Coin removed successfully (no content)"
+// @Failure      500  {object} dto.ErrorResponse "Internal server error"
+// @Router       /coins/{symbol} [delete]
 func (h *Handler) Handle(c *gin.Context) {
-	var req Request
-	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperrors.NewInvalidRequest().Wrap(err))
-		return
-	}
+	symbol := c.Param("symbol")
 
-	if err := h.coins.Deactivate(c.Request.Context(), req.Symbol); err != nil {
+	if err := h.coins.Deactivate(c.Request.Context(), symbol); err != nil {
 		_ = c.Error(err)
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }

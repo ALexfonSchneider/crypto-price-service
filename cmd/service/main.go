@@ -45,7 +45,13 @@ func main() {
 	conf := config.MustConfig()
 
 	pool, err := pgxpool.New(ctx, conf.Postgres.DSN())
+	defer pool.Close()
 	if err != nil {
+		panic(err)
+	}
+
+	if err = pool.Ping(ctx); err != nil {
+		logger.Error("Failed to ping database", "error", err)
 		panic(err)
 	}
 
@@ -57,7 +63,7 @@ func main() {
 	coinService := coinservice.NewService(coinRepo)
 	priceService := priceservice.NewService(priceRepo)
 
-	r := gin.Default()
+	r := gin.New()
 
 	addCoinHandler := addCoin.New(coinService)
 	listCoinsHandler := watchlist.New(coinService)
@@ -70,12 +76,12 @@ func main() {
 
 	v1 := r.Group("/api/v1")
 	{
-		v1.POST("/currency/add", addCoinHandler.Handle)
-		v1.GET("/currency/list", listCoinsHandler.Handle)
-		v1.DELETE("/currency/remove", removeCoinHandler.Handle)
+		v1.POST("/coins", addCoinHandler.Handle)
+		v1.GET("/coins", listCoinsHandler.Handle)
+		v1.DELETE("/coins/:symbol", removeCoinHandler.Handle)
 
-		v1.POST("/currency/price", closestCoinPriceHandler.Handle)
-		v1.POST("/currency/prices", allPricesForCoin.Handle)
+		v1.GET("/coins/:symbol/price/closest", closestCoinPriceHandler.Handle)
+		v1.GET("/coins/:symbol/prices", allPricesForCoin.Handle)
 	}
 
 	r.GET("/health", func(c *gin.Context) {
@@ -89,7 +95,7 @@ func main() {
 		HttpTimeOut: conf.App.CoinPriceFetcher.Timeout,
 		Url:         conf.App.CoinPriceFetcher.Coingecko.Url,
 	})
-	watcher := watchers.New(priceService, coinService, fetcher, logger, time.Second*5)
+	watcher := watchers.New(priceService, coinService, fetcher, logger, conf.App.CoinPriceCollector.Interval)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -97,7 +103,9 @@ func main() {
 	go func() {
 		defer wg.Done()
 		if err := watcher.Watch(ctx); err != nil {
-			logger.Error(err.Error())
+			logger.Error("Watcher stopped with error", "error", err)
+		} else {
+			logger.Info("Watcher stopped gracefully")
 		}
 	}()
 

@@ -2,7 +2,6 @@ package closestToTimestamp
 
 import (
 	_ "crypto-price-service/internal/delivery/http/dto"
-	apperrors "crypto-price-service/internal/errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
@@ -20,34 +19,31 @@ func New(coins Coins, prices Prices) *Handler {
 	}
 }
 
-// closestToTimestamp godoc
-// @Summary get closest coin price
-// @Param request body Request true "get closest price for coin"
-// @Tags Prices
-// @Accept json
-// @Produce json
-// @Success 200 {object} SuccessResponse "ближайшая цена монеты"
-// @Failure      400 {object} dto.ErrorResponse "Input error"
-// @Failure      404 {object} dto.ErrorResponse "Coin does not exists"
-// @Failure      404 {object} dto.ErrorResponse "Price does not exists yet"
-// @Failure      500 {object} dto.ErrorResponse "Internal error"
-// @Router /currency/price [post]
+// ClosestToTimestamp godoc
+// @Summary      Get the closest price for a coin at a given timestamp
+// @Description  Returns the price record closest to the specified timestamp for a given coin symbol
+// @Tags         Prices
+// @Param        symbol      path    string  true   "Coin symbol (e.g. BTC, ETH)"
+// @Param        timestamp   query    int64   true   "Timestamp in milliseconds"
+// @Produce      json
+// @Success      200 {object} SuccessResponse
+// @Failure      400 {object} dto.ErrorResponse "Invalid timestamp or missing parameters"
+// @Failure      404 {object} dto.ErrorResponse "Coin not found or no price data exists"
+// @Failure      500 {object} dto.ErrorResponse "Internal server error"
+// @Router       /coins/{symbol}/price/closest [get]
 func (h *Handler) Handle(c *gin.Context) {
-	var req Request
-	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(apperrors.NewInvalidRequest().Wrap(err))
-		return
-	}
+	symbol := c.Param("symbol")
+	timestamp := c.GetInt64("timestamp")
 
 	ctx := c.Request.Context()
 
-	coin, err := h.coins.BySymbol(ctx, req.Symbol)
+	coin, err := h.coins.BySymbol(ctx, symbol)
 	if err != nil {
 		_ = c.Error(err)
 		return
 	}
 
-	t := time.Unix(req.Timestamp, 0)
+	t := time.Unix(timestamp, 0)
 	price, err := h.prices.ClosestByCoinID(ctx, coin.ID, t)
 	if err != nil {
 		_ = c.Error(err)
@@ -55,7 +51,7 @@ func (h *Handler) Handle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, SuccessResponse{
-		Symbol:    req.Symbol,
+		Symbol:    coin.Symbol,
 		Price:     price.Price,
 		CreatedAt: price.CreatedAt,
 	})

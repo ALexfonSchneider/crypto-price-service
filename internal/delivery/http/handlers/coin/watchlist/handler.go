@@ -16,13 +16,14 @@ func New(coins Coins) *Handler {
 	}
 }
 
-// watchlist godoc
-// @Summary get coins watchlist
-// @Tags Coins
-// @Produce json
-// @Success 200 {object} SuccessResponse "Watchable coins"
-// @Failure 500 {object} dto.ErrorResponse "Internal error"
-// @Router /currency/list [get]
+// Watchlist godoc
+// @Summary      Get list of watched coins
+// @Description  Returns a list of all coins currently in the watchlist with their details
+// @Tags         Coins
+// @Produce      json
+// @Success      200 {object} SuccessResponse "List of coins in the watchlist"
+// @Failure      500 {object} dto.ErrorResponse "Internal server error"
+// @Router       /coins [get]
 func (h *Handler) Handle(c *gin.Context) {
 	coins, err := h.coins.ListActive(c.Request.Context())
 	if err != nil {

@@ -15,8 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/currency/add": {
+        "/coins": {
+            "get": {
+                "description": "Returns a list of all coins currently in the watchlist with their details",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Coins"
+                ],
+                "summary": "Get list of watched coins",
+                "responses": {
+                    "200": {
+                        "description": "List of coins in the watchlist",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http_handlers_coin_watchlist.SuccessResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
+                "description": "Adds a new coin to the watchlist and returns the created coin",
                 "consumes": [
                     "application/json"
                 ],
@@ -26,7 +51,7 @@ const docTemplate = `{
                 "tags": [
                     "Coins"
                 ],
-                "summary": "Add coin to watchlist",
+                "summary": "Add a coin to the watchlist",
                 "parameters": [
                     {
                         "description": "Add coin request",
@@ -40,16 +65,19 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "201": {
-                        "description": "No content (only status)"
+                        "description": "Created coin object",
+                        "schema": {
+                            "$ref": "#/definitions/internal_delivery_http_handlers_coin_addCoin.SuccessResponse"
+                        }
                     },
                     "400": {
-                        "description": "Input error",
+                        "description": "Invalid request",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
@@ -57,24 +85,31 @@ const docTemplate = `{
                 }
             }
         },
-        "/currency/list": {
-            "get": {
+        "/coins/{symbol}": {
+            "delete": {
+                "description": "Removes a coin from the watchlist by its symbol",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Coins"
                 ],
-                "summary": "get coins watchlist",
+                "summary": "Remove coin from watchlist",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Coin symbol (e.g. BTC, ETH)",
+                        "name": "symbol",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
                 "responses": {
-                    "200": {
-                        "description": "Watchable coins",
-                        "schema": {
-                            "$ref": "#/definitions/internal_delivery_http_handlers_coin_watchlist.SuccessResponse"
-                        }
+                    "204": {
+                        "description": "Coin removed successfully (no content)"
                     },
                     "500": {
-                        "description": "Internal error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
@@ -82,50 +117,54 @@ const docTemplate = `{
                 }
             }
         },
-        "/currency/price": {
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
+        "/coins/{symbol}/price/closest": {
+            "get": {
+                "description": "Returns the price record closest to the specified timestamp for a given coin symbol",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "Prices"
                 ],
-                "summary": "get closest coin price",
+                "summary": "Get the closest price for a coin at a given timestamp",
                 "parameters": [
                     {
-                        "description": "get closest price for coin",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_delivery_http_handlers_prices_closestToTimestamp.Request"
-                        }
+                        "type": "string",
+                        "description": "Coin symbol (e.g. BTC, ETH)",
+                        "name": "symbol",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Timestamp in milliseconds",
+                        "name": "timestamp",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "ближайшая цена монеты",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/internal_delivery_http_handlers_prices_closestToTimestamp.SuccessResponse"
                         }
                     },
                     "400": {
-                        "description": "Input error",
+                        "description": "Invalid timestamp or missing parameters",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Price does not exists yet",
+                        "description": "Coin not found or no price data exists",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
@@ -133,8 +172,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/currency/prices": {
-            "post": {
+        "/coins/{symbol}/prices": {
+            "get": {
+                "description": "Returns all recorded prices for the given coin symbol",
                 "consumes": [
                     "application/json"
                 ],
@@ -144,16 +184,14 @@ const docTemplate = `{
                 "tags": [
                     "Prices"
                 ],
-                "summary": "get all prices for coin",
+                "summary": "Get all prices for a coin",
                 "parameters": [
                     {
-                        "description": "get all prices for coin",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_delivery_http_handlers_prices_AllForCoin.Request"
-                        }
+                        "type": "string",
+                        "description": "Coin symbol (e.g. BTC, ETH)",
+                        "name": "symbol",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -164,49 +202,13 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Coin doew not exists",
+                        "description": "Coin does not exist",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/currency/remove": {
-            "delete": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Coins"
-                ],
-                "summary": "remove coin from watchlist",
-                "parameters": [
-                    {
-                        "description": "remove coin request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_delivery_http_handlers_coin_removeCoin.Request"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "No content (only status)"
-                    },
-                    "500": {
-                        "description": "Internal error",
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/crypto-price-service_internal_delivery_http_dto.ErrorResponse"
                         }
@@ -256,10 +258,16 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_delivery_http_handlers_coin_removeCoin.Request": {
+        "internal_delivery_http_handlers_coin_addCoin.SuccessResponse": {
             "type": "object",
             "properties": {
-                "Symbol": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "symbol": {
                     "type": "string"
                 }
             }
@@ -303,14 +311,6 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_delivery_http_handlers_prices_AllForCoin.Request": {
-            "type": "object",
-            "properties": {
-                "symbol": {
-                    "type": "string"
-                }
-            }
-        },
         "internal_delivery_http_handlers_prices_AllForCoin.SuccessResponse": {
             "type": "object",
             "properties": {
@@ -319,17 +319,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_delivery_http_handlers_prices_AllForCoin.CoinPrice"
                     }
-                }
-            }
-        },
-        "internal_delivery_http_handlers_prices_closestToTimestamp.Request": {
-            "type": "object",
-            "properties": {
-                "symbol": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "integer"
                 }
             }
         },

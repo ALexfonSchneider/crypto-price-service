@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-type Request struct {
-	Symbol string `json:"symbol"`
-}
-
 type CoinPrice struct {
 	Price     float64   `json:"price"`
 	CreatedAt time.Time `json:"created_at"`
