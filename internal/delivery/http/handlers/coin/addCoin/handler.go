@@ -2,6 +2,7 @@ package addCoin
 
 import (
 	_ "crypto-price-service/internal/delivery/http/dto"
+	apperrors "crypto-price-service/internal/errors"
 	"crypto-price-service/internal/models"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -30,7 +31,7 @@ func New(coins Coins) *Handler {
 func (h *Handler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindJSON(&req); err != nil {
-		_ = c.Error(err)
+		_ = c.Error(apperrors.NewInvalidRequest().Wrap(err))
 		return
 	}
 
